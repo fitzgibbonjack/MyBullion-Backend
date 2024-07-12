@@ -1,0 +1,14 @@
+.git
+src/public/hot
+src/public/storage
+src/bootstrap/cache/*
+src/node_modules
+src/storage/*.key
+src/storage/app/*
+!src/storage/app/public
+src/storage/app/public/*
+src/storage/framework/cache/*
+src/storage/framework/sessions/*
+src/storage/framework/views/*
+src/storage/logs/*
+src/vendor

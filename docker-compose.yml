@@ -1,0 +1,88 @@
+version: '3.7'
+
+services:
+  web:
+    image: nginx:alpine
+    working_dir: /src
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.<project-group>.rule=Host(`<project>.local.designbysweet.com`)"
+      - "traefik.http.routers.<project-group>.tls=true"
+    volumes:
+      - ./etc/nginx/:/etc/nginx/conf.d/:delegated,ro
+      - ./src:/src:delegated
+    networks:
+      - internal
+      - traefik
+  app:
+    build:
+      context: .
+      dockerfile: ./etc/docker/app.dockerfile
+    user: www-data
+    working_dir: /src
+    volumes:
+      - ./etc/php/php.ini:/usr/local/etc/php/conf.d/00_mvc.ini:delegated,ro
+      - ./src:/src:delegated
+    networks:
+      - internal
+      - local-mysql
+  worker:
+    build:
+      context: .
+      dockerfile: ./etc/docker/app.dockerfile
+    user: www-data
+    working_dir: /src
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 2
+    command: php artisan queue:listen --queue=default,scout_queue
+    volumes:
+      - ./etc/php/php.ini:/usr/local/etc/php/conf.d/00_php.ini:ro
+      - ./src:/src:cached
+    networks:
+      - internal
+      - local-mysql
+  scheduler:
+    build:
+      context: .
+      dockerfile: ./etc/docker/app.dockerfile
+    user: www-data
+    working_dir: /src
+    restart: always
+    command: php artisan schedule:work
+    volumes:
+      - ./etc/php/php.ini:/usr/local/etc/php/conf.d/00_php.ini:ro
+      - ./src:/src:cached
+    networks:
+      - internal
+      - local-mysql
+  redis:
+    image: redis
+    command: redis-server
+    volumes:
+      - redis:/data:delegated
+    networks:
+      - internal
+  search:
+    image: getmeili/meilisearch:v0.30
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.<project-group>-search.rule=Host(`<project-group>-search.local.designbysweet.com`)"
+      - "traefik.http.routers.<project-group>-search.tls=true"
+      - "traefik.http.services.<project-group>-search.loadbalancer.server.port=7700"
+    environment:
+      - MEILI_DB_PATH=/data.ms
+    volumes:
+      - ./runtime/meilisearch/data.ms:/data.ms
+    networks:
+      - internal
+      - traefik
+volumes:
+  redis:
+networks:
+  internal:
+  traefik:
+    external: true
+  local-mysql:
+    external: true

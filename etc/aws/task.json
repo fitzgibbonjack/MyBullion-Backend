@@ -1,0 +1,115 @@
+{
+  "memory": "2048",
+  "taskRoleArn": "arn:aws:iam::821532957075:role/ecsTaskExecutionRole",
+  "family": "$IMAGE_NAME",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "1024",
+  "executionRoleArn": "arn:aws:iam::821532957075:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "app",
+      "image": "$ECR/$IMAGE_NAME:$BRANCH-$COUNTER",
+      "user": "www-data",
+      "cpu": 512,
+      "memory": 1024,
+      "memoryReservation": 512,
+      "essential": true,
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/$IMAGE_NAME-app",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "worker",
+      "image": "$ECR/$IMAGE_NAME:$BRANCH-$COUNTER",
+      "user": "www-data",
+      "cpu": 256,
+      "memory": 512,
+      "memoryReservation": 256,
+      "essential": true,
+      "workingDirectory": "/src",
+      "entryPoint": [
+        "php"
+      ],
+      "command": [
+        "artisan",
+        "queue:listen",
+        "--queue=default,scout_queue"
+      ],
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/$IMAGE_NAME-worker",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "scheduler",
+      "image": "$ECR/$IMAGE_NAME:$BRANCH-$COUNTER",
+      "user": "www-data",
+      "cpu": 256,
+      "memory": 512,
+      "memoryReservation": 256,
+      "essential": true,
+      "workingDirectory": "/src",
+      "entryPoint": [
+        "php"
+      ],
+      "command": [
+        "artisan",
+        "schedule:work",
+      ],
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/$IMAGE_NAME-scheduler",
+          "awslogs-region": "eu-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "web",
+      "image": "nginx",
+      "cpu": 512,
+      "memory": 1024,
+      "memoryReservation": 512,
+      "essential": true,
+      "linuxParameters": {
+        "initProcessEnabled": true
+      },
+      "volumesFrom": [
+        {
+          "sourceContainer": "app",
+          "readOnly": true
+        }
+      ],
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "protocol": "tcp",
+          "containerPort": 80
+        }
+      ]
+    }
+  ]
+}
