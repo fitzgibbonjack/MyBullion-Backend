@@ -1,5 +1,7 @@
 # My Bullion - Laravel Back End
 
+## Overview
+
 A web application built with Laravel, designed to provide a robust API for managing users' gold and silver investments. This backend service allows users to securely sign up, log in, and track their precious metal holdings, whether as individual items (e.g., coins) or as total weights. It provides endpoints for fetching real-time spot prices and tracking the portfolio's value over time, helping users to monitor gains and losses effectively.
 
 -   Developer: Jack Fitzgibbon (@fitzgibbonjack)
