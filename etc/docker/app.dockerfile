@@ -1,4 +1,4 @@
-FROM php:8.0.7-fpm-alpine3.12
+FROM php:8.2-fpm-alpine3.20
 
 # Add base extensions
 RUN apk add --no-cache bash jpeg-dev libpng-dev libzip-dev \
